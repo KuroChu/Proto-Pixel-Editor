@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Protogen Pixel Editor</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #0d0d0d;
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      margin: 1rem 0;
+      font-size: 2rem;
+      color: #0af;
+    }
+
+    #config {
+      margin: 1em;
+      text-align: center;
+    }
+
+    textarea {
+      width: 320px;
+      height: 150px;
+      background: #1a1a1a;
+      color: #eee;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 0.5em;
+      font-family: monospace;
+      resize: none;
+    }
+
+    button {
+      margin: 0.8em;
+      padding: 0.5em 1.2em;
+      background: #0af;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #08c;
+    }
+
+    #zoomControl {
+      margin: 1em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .grid-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      justify-content: center;
+      margin: 2em 0;
+      max-width: 95vw;
+    }
+
+    .display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5em;
+      max-width: 95vw;
+    }
+
+    .grid-wrapper {
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #000;
+      padding: 10px;
+      overflow: auto;
+      max-width: 90vw;
+      max-height: 70vh;
+    }
+
+    .grid {
+      display: grid;
+    }
+
+    .pixel {
+      background: #111;
+      border-radius: 4px;
+      margin: 1px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .pixel.on {
+      background: #0af;
+      box-shadow: 0 0 6px #0af;
+    }
+
+    #output {
+      width: 90%;
+      height: 200px;
+      margin: 1em 0;
+      background: #1a1a1a;
+      color: #eee;
+      border: 1px solid #333;
+      border-radius: 6px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>Protogen Pixel Editor</h1>
+  <div id="config">
+    <label for="configInput">Displays (JSON):</label><br>
+    <textarea id="configInput">{
+  "global": {
+    "ledSize": 10,
+    "spacing": 2,
+    "displayGap": 20,
+    "layoutColumns": 2
+  },
+  "displays": {
+    "left":  { "width": 16, "height": 16 },
+    "right": { "width": 32,  "height": 32 },
+    "front": { "width": 16,  "height": 16 }
+  }
+}</textarea><br>
+    <button onclick="loadConfig()">Load Config</button>
+  </div>
+
+  <div id="zoomControl">
+    <label for="zoom">Zoom:</label>
+    <input type="range" id="zoom" min="4" max="30" value="10" oninput="updateZoom(this.value)">
+    <span id="zoomValue">10</span> px
+  </div>
+
+  <div class="grid-container" id="gridContainer"></div>
+  <div>
+    <button onclick="exportJSON()">Export JSON</button>
+    <button onclick="copyJSON()">Copy JSON</button>
+  </div>
+  <textarea id="output"></textarea>
+
+  <script>
+    let displays = {};
+    let config = {};
+    let drawing = false;
+    let drawMode = true; // true = draw on, false = erase
+    let ledSize = 10;
+
+    function loadConfig() {
+      config = JSON.parse(document.getElementById('configInput').value);
+      ledSize = config.global.ledSize;
+      const container = document.getElementById('gridContainer');
+      container.innerHTML = '';
+      displays = {};
+
+      for (const [id, disp] of Object.entries(config.displays)) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'display';
+
+        const label = document.createElement('div');
+        label.innerText = id;
+        label.style.fontWeight = 'bold';
+        label.style.color = '#0af';
+        wrapper.appendChild(label);
+
+        const gridWrapper = document.createElement('div');
+        gridWrapper.className = 'grid-wrapper';
+
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+        grid.dataset.id = id;
+        grid.style.gridTemplateColumns = `repeat(${disp.width}, ${ledSize}px)`;
+        grid.style.gridTemplateRows = `repeat(${disp.height}, ${ledSize}px)`;
+
+        displays[id] = [];
+
+        for (let y = 0; y < disp.height; y++) {
+          displays[id][y] = [];
+          for (let x = 0; x < disp.width; x++) {
+            const pixel = document.createElement('div');
+            pixel.className = 'pixel';
+            pixel.style.width = ledSize + 'px';
+            pixel.style.height = ledSize + 'px';
+            pixel.dataset.x = x;
+            pixel.dataset.y = y;
+            pixel.dataset.id = id;
+
+            pixel.onmousedown = (e) => {
+              drawing = true;
+              drawMode = !pixel.classList.contains('on');
+              togglePixel(pixel, drawMode);
+            };
+            pixel.onmouseenter = (e) => {
+              if (drawing) togglePixel(pixel, drawMode);
+            };
+
+            grid.appendChild(pixel);
+            displays[id][y][x] = 0;
+          }
+        }
+        gridWrapper.appendChild(grid);
+        wrapper.appendChild(gridWrapper);
+        container.appendChild(wrapper);
+      }
+    }
+
+    function togglePixel(pixel, state) {
+      const x = pixel.dataset.x;
+      const y = pixel.dataset.y;
+      const id = pixel.dataset.id;
+      if (state) {
+        pixel.classList.add('on');
+        displays[id][y][x] = 1;
+      } else {
+        pixel.classList.remove('on');
+        displays[id][y][x] = 0;
+      }
+    }
+
+    document.body.onmouseup = () => {
+      drawing = false;
+    };
+
+    function trimRow(row) {
+      let lastOne = row.lastIndexOf('1');
+      if (lastOne === -1) return ""; // empty row
+      return row.substring(0, lastOne + 1);
+    }
+
+    function exportJSON() {
+      const frames = [{}];
+      for (const [id, grid] of Object.entries(displays)) {
+        frames[0][id] = grid.map(row => trimRow(row.join('')));
+      }
+      const json = {
+        emote: "custom",
+        frames: frames
+      };
+      document.getElementById('output').value = JSON.stringify(json, null, 2);
+    }
+
+    function copyJSON() {
+      const output = document.getElementById('output');
+      output.select();
+      output.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(output.value).then(() => {
+        alert("JSON copied to clipboard!");
+      });
+    }
+
+    function updateZoom(value) {
+      ledSize = parseInt(value);
+      document.getElementById('zoomValue').innerText = value;
+
+      document.querySelectorAll('.grid').forEach(grid => {
+        const id = grid.dataset.id;
+        const disp = config.displays[id];
+        grid.style.gridTemplateColumns = `repeat(${disp.width}, ${ledSize}px)`;
+        grid.style.gridTemplateRows = `repeat(${disp.height}, ${ledSize}px)`;
+        grid.querySelectorAll('.pixel').forEach(pixel => {
+          pixel.style.width = ledSize + 'px';
+          pixel.style.height = ledSize + 'px';
+        });
+      });
+    }
+
+    loadConfig();
+  </script>
+</body>
+</html>
