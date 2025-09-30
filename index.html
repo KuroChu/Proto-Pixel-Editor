@@ -1,126 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Protogen Pixel Editor</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Protogen RGB Pixel Editor</title>
   <style>
+    :root {
+      --bg: #0b0b0e;
+      --panel: #121217;
+      --ink: #e7e7ea;
+      --accent: #00aaff;
+      --accent-2: #7dd3fc;
+      --muted: #2a2a32;
+      --grid-off: rgba(17, 17, 17, 0.5);
+      --pixel-border: rgba(255,255,255,.06);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      background: #0d0d0d;
-      color: #f0f0f0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 0;
-      padding: 0;
+      margin: 0; font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
+      color: var(--ink); background: radial-gradient(1200px 800px at 80% -20%, #0d1424 0%, var(--bg) 60%);
     }
+    header { display:flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--muted); }
+    header h1 { margin: 0; font-size: 1.15rem; letter-spacing: .2px; color: var(--accent-2); }
 
-    h1 {
-      margin: 1rem 0;
-      font-size: 2rem;
-      color: #0af;
-    }
+    .wrap { display:grid; grid-template-columns: 320px 1fr; gap: 16px; padding: 16px; }
+    @media (max-width: 1000px){ .wrap{ grid-template-columns: 1fr; } }
 
-    #config {
-      margin: 1em;
-      text-align: center;
-    }
+    .card { background: var(--panel); border: 1px solid var(--muted); border-radius: 12px; padding: 12px; }
+    .card h2 { margin: 4px 0 10px; font-size: .95rem; color: #b9d6ff; font-weight: 600; }
 
-    textarea {
-      width: 320px;
-      height: 150px;
-      background: #1a1a1a;
-      color: #eee;
-      border: 1px solid #333;
-      border-radius: 6px;
-      padding: 0.5em;
-      font-family: monospace;
-      resize: none;
-    }
+    .row { display:flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    label { font-size: .85rem; color: #cdd6f4; opacity: .9; }
+    input[type="number"], input[type="text"], textarea, select { width: 100%; background: #0f1016; color: var(--ink); border: 1px solid #2a2d39; border-radius: 8px; padding: .5rem .6rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    textarea { resize: vertical; min-height: 120px; }
+    input[type="range"] { width: 100%; }
+    input[type="color"] { background: #0f1016; border: 1px solid #2a2d39; border-radius: 8px; padding: 0; height: 38px; width: 48px; }
 
-    button {
-      margin: 0.8em;
-      padding: 0.5em 1.2em;
-      background: #0af;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+    button { background: var(--accent); color: #00131a; border: none; border-radius: 10px; padding: .55rem .8rem; font-weight: 600; cursor: pointer; box-shadow: 0 1px 0 rgba(255,255,255,.08) inset; }
+    button.ghost { background: #161823; color: #bcd7ff; border: 1px solid #263041; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
 
-    button:hover {
-      background: #08c;
-    }
+    .toolbar { display:flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
-    #zoomControl {
-      margin: 1em;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .grids { display:flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
 
-    .grid-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 40px;
-      justify-content: center;
-      margin: 2em 0;
-      max-width: 95vw;
-    }
+    .display { display:flex; flex-direction: column; gap: 8px; align-items: stretch; }
+    .display-title { font-size: .9rem; color: #8dd0ff; font-weight: 600; letter-spacing: .2px; }
 
-    .display {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5em;
-      max-width: 95vw;
-    }
+    .grid-wrap { position: relative; border: 1px solid var(--muted); border-radius: 12px; overflow: auto; background: #000; padding: 10px; max-width: 100%; max-height: 70vh; }
+    /* .grid-wrap.bg-hint { background-image: url('https://i.postimg.cc/5f3Nd86b/20250715-221824.png?dl=1'); background-size: 97%; background-repeat: no-repeat; background-position: center; } */
+    .grid-wrap.bg-hint { background-size: 97%; background-repeat: no-repeat; background-position: center; }
 
-    .grid-wrapper {
-      border: 2px solid #333;
-      border-radius: 8px;
-      background: #000;
-      padding: 10px;
-      overflow: auto;
-      max-width: 90vw;
-      max-height: 70vh;
-    }
+    .grid { display:grid; user-select: none; }
+    .pixel { width: 12px; height: 12px; border-radius: 3px; margin: 1px; background: var(--grid-off); border: 1px solid var(--pixel-border); cursor: crosshair; transition: transform .02s; }
+    .pixel:active { transform: scale(.98); }
 
-    .grid {
-      display: grid;
-    }
+    .mini-note { font-size: .75rem; color: #9aa5b1; opacity: .9; }
+    .kbd { background:#10131e; border:1px solid #252a3b; border-bottom-color:#1a1e2c; border-radius:6px; padding: 2px 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .8rem; color:#bcd7ff; }
 
-    .pixel {
-      background: #111;
-      border-radius: 4px;
-      margin: 1px;
-      cursor: pointer;
-      transition: background 0.1s;
-    }
-
-    .pixel.on {
-      background: #0af;
-      box-shadow: 0 0 6px #0af;
-    }
-
-    #output {
-      width: 90%;
-      height: 200px;
-      margin: 1em 0;
-      background: #1a1a1a;
-      color: #eee;
-      border: 1px solid #333;
-      border-radius: 6px;
-      font-family: monospace;
-    }
+    .spacer { flex: 1 1 auto; }
+    .grid-footer { display:flex; gap:8px; align-items:center; justify-content: space-between; margin-top: 6px; }
   </style>
 </head>
 <body>
-  <h1>Protogen Pixel Editor</h1>
-  <div id="config">
-    <label for="configInput">Displays (JSON):</label><br>
-    <textarea id="configInput">{
+  <header>
+    <h1>Protogen RGB Pixel Editor</h1>
+    <div class="toolbar">
+      <label class="mini-note">Brush</label>
+      <input id="brushColor" type="color" value="#00AAFF" title="Brush color" />
+      <button id="eraserBtn" class="ghost" title="Eraser (RMB)">Eraser</button>
+      <button id="eyedropBtn" class="ghost" title="Eyedropper (Alt-click)">Eyedrop</button>
+      <div class="spacer"></div>
+      <label for="zoomRange" class="mini-note">Zoom</label>
+      <input id="zoomRange" type="range" min="4" max="30" value="10" />
+      <span id="zoomVal" class="mini-note">10 px</span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- LEFT COLUMN: Config + Import/Export + Image Tools -->
+    <div class="left">
+      <div class="card">
+        <h2>Layout Config</h2>
+        <div class="row" style="gap:10px; align-items:flex-start;">
+          <textarea id="configInput" spellcheck="false">{
   "global": {
     "ledSize": 10,
     "spacing": 2,
@@ -132,149 +96,373 @@
     "right": { "width": 32,  "height": 32 },
     "front": { "width": 16,  "height": 16 }
   }
-}</textarea><br>
-    <button onclick="loadConfig()">Load Config</button>
-  </div>
+}</textarea>
+          <div class="row" style="width:100%">
+            <button id="loadConfigBtn">Load Config</button>
+            <button id="clearBtn" class="ghost">Clear (Black)</button>
+          </div>
+          <p class="mini-note">Define your display layout. Each display is a grid. <span class="kbd">ledSize</span> only affects the on-screen size, not export.</p>
+        </div>
+      </div>
 
-  <div id="zoomControl">
-    <label for="zoom">Zoom:</label>
-    <input type="range" id="zoom" min="4" max="30" value="10" oninput="updateZoom(this.value)">
-    <span id="zoomValue">10</span> px
-  </div>
+      <div class="card">
+        <h2>Import / Export Emote</h2>
+        <div class="row" style="gap:8px">
+          <button id="exportBtn">Export JSON</button>
+          <button id="copyBtn" class="ghost">Copy</button>
+        </div>
+        <textarea id="output" placeholder="Exported JSON will appear here..." spellcheck="false"></textarea>
+        <div class="row" style="gap:8px; margin-top:8px">
+          <input id="importFile" type="file" accept="application/json" />
+          <button id="importBtn" class="ghost">Import from Text</button>
+        </div>
+        <textarea id="importText" placeholder="Paste an emote JSON here to import..." spellcheck="false"></textarea>
+        <p class="mini-note">Imports/exports follow the RGB format: <span class="kbd">{ emote, frames: [ { displayId: [["#RRGGBB",...], ...] } ] }</span></p>
+      </div>
 
-  <div class="grid-container" id="gridContainer"></div>
-  <div>
-    <button onclick="exportJSON()">Export JSON</button>
-    <button onclick="copyJSON()">Copy JSON</button>
+      <div class="card">
+        <h2>Image → Panel</h2>
+        <div class="row" style="gap:8px">
+          <label for="imageDisplay">Display</label>
+          <select id="imageDisplay"></select>
+        </div>
+        <div class="row" style="gap:8px">
+          <label for="fitMode">Fit</label>
+          <select id="fitMode">
+            <option value="contain">Contain (letterbox)</option>
+            <option value="cover">Cover (crop)</option>
+            <option value="stretch">Stretch</option>
+          </select>
+        </div>
+        <div class="row" style="gap:8px">
+          <input id="imageFile" type="file" accept="image/*" />
+          <button id="applyImageBtn">Apply to Grid</button>
+        </div>
+        <p class="mini-note">Uploads an image, scales it to the selected panel, and maps pixel colors into the grid. Uses nearest-neighbor sampling.</p>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Grids -->
+    <div class="right">
+      <div class="card">
+        <h2>Editor</h2>
+        <div id="grids" class="grids"></div>
+      </div>
+    </div>
   </div>
-  <textarea id="output"></textarea>
 
   <script>
-    let displays = {};
+    // --- State ---
     let config = {};
+    let displays = {}; // { id: [["#RRGGBB", ...], ...] }
     let drawing = false;
-    let drawMode = true; // true = draw on, false = erase
+    let drawColor = '#00AAFF';
+    let erasing = false;
+    let eyedrop = false;
     let ledSize = 10;
+    let spacing = 2;
 
-    function loadConfig() {
-      config = JSON.parse(document.getElementById('configInput').value);
-      ledSize = config.global.ledSize;
-      const container = document.getElementById('gridContainer');
+    const $ = (id) => document.getElementById(id);
+
+    // --- Helpers ---
+    function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+    function toHex(n){ return n.toString(16).padStart(2, '0').toUpperCase(); }
+    function rgbToHex(r,g,b){ return `#${toHex(r)}${toHex(g)}${toHex(b)}`; }
+    function isHexColor(str){ return /^#([0-9A-Fa-f]{6})$/.test(str); }
+
+    function ensureDisplayMatrix(w,h, fill = '#000000'){
+      const mat = new Array(h);
+      for(let y=0; y<h; y++){
+        mat[y] = new Array(w);
+        for(let x=0; x<w; x++) mat[y][x] = fill;
+      }
+      return mat;
+    }
+
+    function buildGrids(){
+      const container = $('grids');
       container.innerHTML = '';
-      displays = {};
+      const imageDisplaySelect = $('imageDisplay');
+      imageDisplaySelect.innerHTML = '';
 
-      for (const [id, disp] of Object.entries(config.displays)) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'display';
+      for(const [id, disp] of Object.entries(config.displays)){
+        const w = disp.width, h = disp.height;
+        if(!displays[id]) displays[id] = ensureDisplayMatrix(w, h);
 
-        const label = document.createElement('div');
-        label.innerText = id;
-        label.style.fontWeight = 'bold';
-        label.style.color = '#0af';
-        wrapper.appendChild(label);
+        // display container
+        const display = document.createElement('div');
+        display.className = 'display';
 
-        const gridWrapper = document.createElement('div');
-        gridWrapper.className = 'grid-wrapper';
+        const title = document.createElement('div');
+        title.className = 'display-title';
+        title.textContent = `${id}  (${w}×${h})`;
+        display.appendChild(title);
+
+        const gridWrap = document.createElement('div');
+        gridWrap.className = 'grid-wrap bg-hint';
 
         const grid = document.createElement('div');
         grid.className = 'grid';
         grid.dataset.id = id;
-        grid.style.gridTemplateColumns = `repeat(${disp.width}, ${ledSize}px)`;
-        grid.style.gridTemplateRows = `repeat(${disp.height}, ${ledSize}px)`;
+        applyGridSizing(grid, w, h);
 
-        displays[id] = [];
+        for(let y=0; y<h; y++){
+          for(let x=0; x<w; x++){
+            const px = document.createElement('div');
+            px.className = 'pixel';
+            px.style.background = displays[id][y][x] || '#000000';
+            px.dataset.x = x; px.dataset.y = y; px.dataset.id = id;
 
-        for (let y = 0; y < disp.height; y++) {
-          displays[id][y] = [];
-          for (let x = 0; x < disp.width; x++) {
-            const pixel = document.createElement('div');
-            pixel.className = 'pixel';
-            pixel.style.width = ledSize + 'px';
-            pixel.style.height = ledSize + 'px';
-            pixel.dataset.x = x;
-            pixel.dataset.y = y;
-            pixel.dataset.id = id;
-
-            pixel.onmousedown = (e) => {
+            px.onmousedown = (e) => {
+              e.preventDefault();
               drawing = true;
-              drawMode = !pixel.classList.contains('on');
-              togglePixel(pixel, drawMode);
+              if(e.button === 2){ // RMB = eraser
+                setPixel(px, '#000000');
+              } else {
+                if(eyedrop){ eyedropColor(px); return; }
+                setPixel(px, erasing ? '#000000' : drawColor);
+              }
             };
-            pixel.onmouseenter = (e) => {
-              if (drawing) togglePixel(pixel, drawMode);
-            };
+            px.onmouseenter = (e) => { if(drawing){ setPixel(px, erasing ? '#000000' : drawColor); } };
+            px.oncontextmenu = (e) => { e.preventDefault(); };
+            px.onmouseup = () => { drawing = false; };
 
-            grid.appendChild(pixel);
-            displays[id][y][x] = 0;
+            px.addEventListener('click', (e) => {
+              if(e.altKey){ eyedropColor(px); }
+            });
+
+            grid.appendChild(px);
           }
         }
-        gridWrapper.appendChild(grid);
-        wrapper.appendChild(gridWrapper);
-        container.appendChild(wrapper);
+
+        gridWrap.appendChild(grid);
+        display.appendChild(gridWrap);
+
+        const footer = document.createElement('div');
+        footer.className = 'grid-footer';
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'ghost';
+        clearBtn.textContent = 'Clear This Grid';
+        clearBtn.onclick = () => { clearGrid(id); };
+        footer.appendChild(clearBtn);
+        display.appendChild(footer);
+
+        container.appendChild(display);
+
+        // add to image display select
+        const opt = document.createElement('option');
+        opt.value = id; opt.textContent = `${id} (${w}×${h})`;
+        imageDisplaySelect.appendChild(opt);
       }
     }
 
-    function togglePixel(pixel, state) {
-      const x = pixel.dataset.x;
-      const y = pixel.dataset.y;
-      const id = pixel.dataset.id;
-      if (state) {
-        pixel.classList.add('on');
-        displays[id][y][x] = 1;
-      } else {
-        pixel.classList.remove('on');
-        displays[id][y][x] = 0;
+    function applyGridSizing(gridEl, w, h){
+      gridEl.style.gridTemplateColumns = `repeat(${w}, ${ledSize}px)`;
+      gridEl.style.gridTemplateRows = `repeat(${h}, ${ledSize}px)`;
+      Array.from(gridEl.children).forEach(px => { px.style.width = ledSize + 'px'; px.style.height = ledSize + 'px'; });
+    }
+
+    function setPixel(pxEl, color){
+      const id = pxEl.dataset.id, x = +pxEl.dataset.x, y = +pxEl.dataset.y;
+      const hex = isHexColor(color) ? color.toUpperCase() : '#000000';
+      displays[id][y][x] = hex;
+      pxEl.style.background = hex;
+    }
+
+    function eyedropColor(pxEl){
+      const id = pxEl.dataset.id, x = +pxEl.dataset.x, y = +pxEl.dataset.y;
+      const c = displays[id][y][x] || '#000000';
+      $('brushColor').value = c;
+      drawColor = c;
+    }
+
+    function clearGrid(id){
+      const w = config.displays[id].width, h = config.displays[id].height;
+      displays[id] = ensureDisplayMatrix(w, h, '#000000');
+      const gridEl = document.querySelector(`.grid[data-id="${id}"]`);
+      if(gridEl){ Array.from(gridEl.children).forEach(px => px.style.background = '#000000'); }
+    }
+
+    // --- Export (RGB format) ---
+    function exportJSON(){
+      const frameObj = {};
+      for(const [id, mat] of Object.entries(displays)){
+        // deep clone to ensure hex uppercase and consistent
+        frameObj[id] = mat.map(row => row.map(c => (isHexColor(c) ? c.toUpperCase() : '#000000')));
+      }
+      const out = { emote: 'custom', frames: [ frameObj ] };
+      $('output').value = JSON.stringify(out, null, 2);
+    }
+
+    async function copyJSON(){
+      const val = $('output').value;
+      try { await navigator.clipboard.writeText(val); alert('JSON copied to clipboard!'); }
+      catch(e){ console.warn(e); alert('Copy failed'); }
+    }
+
+    // --- Import ---
+    function importFromText(){
+      try {
+        const data = JSON.parse($('importText').value);
+        applyImportedEmote(data);
+      } catch(err){ alert('Invalid JSON'); console.error(err); }
+    }
+
+    function applyImportedEmote(data){
+      if(!data || !Array.isArray(data.frames) || data.frames.length === 0){
+        alert('No frames found'); return;
+      }
+      const frame0 = data.frames[0];
+      // Merge displays that exist in both config and imported data
+      for(const [id, mat] of Object.entries(frame0)){
+        if(!config.displays[id]) continue; // skip unknown display ids
+        const w = config.displays[id].width, h = config.displays[id].height;
+        // If sizes differ, we clamp/copy into our matrix
+        const newMat = ensureDisplayMatrix(w, h, '#000000');
+        for(let y=0; y<Math.min(h, mat.length); y++){
+          for(let x=0; x<Math.min(w, mat[y].length); x++){
+            const c = mat[y][x];
+            newMat[y][x] = isHexColor(c) ? c.toUpperCase() : '#000000';
+          }
+        }
+        displays[id] = newMat;
+      }
+      // repaint UI
+      for(const [id, mat] of Object.entries(displays)){
+        const gridEl = document.querySelector(`.grid[data-id="${id}"]`);
+        if(!gridEl) continue;
+        const w = config.displays[id].width, h = config.displays[id].height;
+        let i=0;
+        for(let y=0; y<h; y++){
+          for(let x=0; x<w; x++){
+            const px = gridEl.children[i++];
+            if(px) px.style.background = mat[y][x];
+          }
+        }
       }
     }
 
-    document.body.onmouseup = () => {
-      drawing = false;
-    };
+    // --- Image → Panel ---
+    function applyImageToGrid(file){
+      const targetId = $('imageDisplay').value;
+      if(!targetId){ alert('Select a display'); return; }
+      if(!file){ alert('Choose an image'); return; }
+      const w = config.displays[targetId].width, h = config.displays[targetId].height;
+      const fit = $('fitMode').value; // contain | cover | stretch
 
-    function trimRow(row) {
-      let lastOne = row.lastIndexOf('1');
-      if (lastOne === -1) return ""; // empty row
-      return row.substring(0, lastOne + 1);
-    }
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const cx = canvas.getContext('2d', { willReadFrequently: true });
+        canvas.width = w; canvas.height = h;
 
-    function exportJSON() {
-      const frames = [{}];
-      for (const [id, grid] of Object.entries(displays)) {
-        frames[0][id] = grid.map(row => trimRow(row.join('')));
-      }
-      const json = {
-        emote: "custom",
-        frames: frames
+        // compute draw size & position according to fit
+        let dw = w, dh = h, dx = 0, dy = 0;
+        if(fit !== 'stretch'){
+          const aspectImg = img.width / img.height;
+          const aspectDst = w / h;
+          if((fit === 'contain' && aspectImg > aspectDst) || (fit === 'cover' && aspectImg < aspectDst)){
+            // match width
+            dw = w; dh = Math.round(w / aspectImg);
+            dy = Math.floor((h - dh) / 2);
+          } else {
+            // match height
+            dh = h; dw = Math.round(h * aspectImg);
+            dx = Math.floor((w - dw) / 2);
+          }
+        }
+
+        // Disable smoothing for nearest-neighbor feel
+        cx.imageSmoothingEnabled = false;
+        cx.fillStyle = '#000';
+        cx.fillRect(0,0,w,h);
+        cx.drawImage(img, dx, dy, dw, dh);
+
+        // read pixels
+        const data = cx.getImageData(0,0,w,h).data;
+        const mat = ensureDisplayMatrix(w, h, '#000000');
+        for(let y=0; y<h; y++){
+          for(let x=0; x<w; x++){
+            const idx = (y*w + x) * 4;
+            const r = data[idx], g = data[idx+1], b = data[idx+2];
+            mat[y][x] = rgbToHex(r,g,b);
+          }
+        }
+        displays[targetId] = mat;
+
+        // repaint UI
+        const gridEl = document.querySelector(`.grid[data-id="${targetId}"]`);
+        if(gridEl){
+          let i=0;
+          for(let y=0; y<h; y++){
+            for(let x=0; x<w; x++){
+              const px = gridEl.children[i++];
+              if(px) px.style.background = mat[y][x];
+            }
+          }
+        }
       };
-      document.getElementById('output').value = JSON.stringify(json, null, 2);
+      img.src = URL.createObjectURL(file);
     }
 
-    function copyJSON() {
-      const output = document.getElementById('output');
-      output.select();
-      output.setSelectionRange(0, 99999);
-      navigator.clipboard.writeText(output.value).then(() => {
-        alert("JSON copied to clipboard!");
-      });
-    }
+    // --- Events ---
+    window.addEventListener('mouseup', () => drawing = false);
 
-    function updateZoom(value) {
-      ledSize = parseInt(value);
-      document.getElementById('zoomValue').innerText = value;
+    $('loadConfigBtn').addEventListener('click', () => {
+      try {
+        config = JSON.parse($('configInput').value);
+      } catch(err){ alert('Invalid layout JSON'); return; }
+      ledSize = config.global?.ledSize ?? 10;
+      spacing = config.global?.spacing ?? 2;
+      buildGrids();
+    });
 
+    $('clearBtn').addEventListener('click', () => {
+      for(const id of Object.keys(config.displays)) clearGrid(id);
+    });
+
+    $('brushColor').addEventListener('input', (e) => { drawColor = e.target.value.toUpperCase(); eyedrop = false; });
+    $('eraserBtn').addEventListener('click', () => { erasing = !erasing; eyedrop = false; $('eraserBtn').classList.toggle('ghost', !erasing); $('eraserBtn').textContent = erasing ? 'Eraser (ON)' : 'Eraser'; });
+    $('eyedropBtn').addEventListener('click', () => { eyedrop = !eyedrop; erasing = false; $('eyedropBtn').classList.toggle('ghost', !eyedrop); $('eyedropBtn').textContent = eyedrop ? 'Eyedrop (ON)' : 'Eyedrop'; });
+
+    $('zoomRange').addEventListener('input', (e) => {
+      const v = parseInt(e.target.value, 10); ledSize = v; $('zoomVal').textContent = `${v} px`;
       document.querySelectorAll('.grid').forEach(grid => {
-        const id = grid.dataset.id;
-        const disp = config.displays[id];
-        grid.style.gridTemplateColumns = `repeat(${disp.width}, ${ledSize}px)`;
-        grid.style.gridTemplateRows = `repeat(${disp.height}, ${ledSize}px)`;
-        grid.querySelectorAll('.pixel').forEach(pixel => {
-          pixel.style.width = ledSize + 'px';
-          pixel.style.height = ledSize + 'px';
-        });
+        const id = grid.dataset.id; const d = config.displays[id];
+        applyGridSizing(grid, d.width, d.height);
       });
-    }
+    });
 
-    loadConfig();
+    $('exportBtn').addEventListener('click', exportJSON);
+    $('copyBtn').addEventListener('click', copyJSON);
+
+    $('importBtn').addEventListener('click', importFromText);
+    $('importFile').addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try { applyImportedEmote(JSON.parse(reader.result)); }
+        catch(err){ alert('Invalid JSON in file'); console.error(err); }
+      };
+      reader.readAsText(file);
+    });
+
+    $('applyImageBtn').addEventListener('click', () => {
+      const file = $('imageFile').files?.[0];
+      applyImageToGrid(file);
+    });
+
+    // --- Init ---
+    (function init(){
+      // initial layout
+      config = JSON.parse($('configInput').value);
+      ledSize = config.global?.ledSize ?? 10;
+      spacing = config.global?.spacing ?? 2;
+      buildGrids();
+      // default draw color
+      drawColor = $('brushColor').value.toUpperCase();
+    })();
   </script>
 </body>
 </html>
