@@ -187,7 +187,7 @@
 
       for(const [id, disp] of Object.entries(config.displays)){
         const w = disp.width, h = disp.height;
-        if(!displays[id]) displays[id] = ensureDisplayMatrix(w, h);
+        displays[id] = ensureDisplayMatrix(w, h, '#000000');
 
         // display container
         const display = document.createElement('div');
